@@ -243,3 +243,4 @@ ModelManifest.xml
 
 # FAKE - F# Make
 .fake/
+/TQL/TQL.Interfaces/TQL.Interfaces.nuspec
