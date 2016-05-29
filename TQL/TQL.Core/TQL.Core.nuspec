@@ -6,13 +6,13 @@
     <title>$title$</title>
     <authors>$author$</authors>
     <owners>$author$</owners>
-    <licenseUrl>https://github.com/Puchaczov/CronExpression.Common/blob/master/LICENSE</licenseUrl>
-    <projectUrl>https://github.com/Puchaczov/CronExpression.Common</projectUrl>
+    <licenseUrl>https://github.com/Puchaczov/TQL/blob/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/Puchaczov/TQL</projectUrl>
     <iconUrl>http://ICON_URL_HERE_OR_DELETE_THIS_LINE</iconUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>$description$</description>
-    <releaseNotes>Common objects used in cron expression library</releaseNotes>
-    <copyright>Copyright 2016</copyright>
-    <tags>Cron CronExpression Cron.Common</tags>
+    <releaseNotes>Initial release.</releaseNotes>
+    <copyright>Jakub Puchała 2016</copyright>
+    <tags>TQL TQL.Core</tags>
   </metadata>
 </package>
