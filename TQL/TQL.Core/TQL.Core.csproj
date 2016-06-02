@@ -34,6 +34,9 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="Converters\ConverterBase.cs" />
+    <Compile Include="Converters\ConvertionRequestBase.cs" />
+    <Compile Include="Converters\ConvertionResponseBase.cs" />
     <Compile Include="Exceptions\UnexpectedTokenException.cs" />
     <Compile Include="Helpers\TextSpanHelper.cs" />
     <Compile Include="Syntax\LexerBase.cs" />
@@ -44,6 +47,12 @@
     <Compile Include="Tokens\TextSpan.cs" />
     <Compile Include="Tokens\GenericToken.cs" />
     <Compile Include="Tokens\TokenTypeBase.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\TQL.Common\TQL.Common.csproj">
+      <Project>{CFAED496-76E0-4F27-9D16-B28FCC2637BE}</Project>
+      <Name>TQL.Common</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildExtensionsPath32)\Microsoft\Portable\$(TargetFrameworkVersion)\Microsoft.Portable.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
