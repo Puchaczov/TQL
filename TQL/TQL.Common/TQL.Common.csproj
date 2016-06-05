@@ -41,10 +41,14 @@
     <Compile Include="Converters\IConvertible.cs" />
     <Compile Include="Converters\NoConvertion.cs" />
     <Compile Include="Evaluators\IEvaluable.cs" />
+    <Compile Include="Filters\LowerCase.cs" />
     <Compile Include="Filters\Pipeline\FilterBase.cs" />
     <Compile Include="Filters\Pipeline\IFilter.cs" />
     <Compile Include="Filters\Pipeline\IFilterChain.cs" />
     <Compile Include="Filters\Pipeline\Pipeline.cs" />
+    <Compile Include="Filters\ReplaceChar.cs" />
+    <Compile Include="Filters\Trim.cs" />
+    <Compile Include="Filters\UpperCase.cs" />
     <Compile Include="Helpers\ListHelper.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
