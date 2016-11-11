@@ -38,6 +38,7 @@
     <Compile Include="Converters\ConvertionRequestBase.cs" />
     <Compile Include="Converters\ConvertionResponseBase.cs" />
     <Compile Include="Exceptions\UnexpectedTokenException.cs" />
+    <Compile Include="Exceptions\UnknownTokenException.cs" />
     <Compile Include="Helpers\TextSpanHelper.cs" />
     <Compile Include="Syntax\LexerBase.cs" />
     <Compile Include="Syntax\ParserBase.cs" />

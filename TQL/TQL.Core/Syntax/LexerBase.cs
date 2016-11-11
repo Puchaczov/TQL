@@ -2,37 +2,79 @@
 using System.Collections;
 using System.Collections.Generic;
 using System.Text.RegularExpressions;
+using TQL.Core.Exceptions;
 
 namespace TQL.Core.Syntax
 {
+    /// <summary>
+    /// Idea how to implement this piece of code where founded here:
+    /// https://blogs.msdn.microsoft.com/drew/2009/12/31/a-simple-lexer-in-c-that-uses-regular-expressions/
+    /// </summary>
     public abstract class LexerBase<TToken>: ILexer<TToken>
     {
-        protected TToken currentToken;
-        protected TToken lastToken;
+        #region TokenUtils
 
-        protected readonly Dictionary<char, char> endLines = new Dictionary<char, char>();
+        protected sealed class TokenDefinition
+        {
+            public Regex Regex { get; }
+
+            public TokenDefinition(string pattern)
+            {
+                Regex = new Regex(pattern);
+            }
+
+            public TokenDefinition(string pattern, RegexOptions options)
+            {
+                Regex = new Regex(pattern, options);
+            }
+        }
+        protected sealed class TokenPosition
+        {
+            public int Index { get; }
+            public int Length { get; }
+
+            public TokenPosition(int index, int length)
+            {
+                this.Index = index;
+                this.Length = length;
+            }
+        }
+
+        #endregion
+
+        #region Private variables
+
+        private TokenDefinition[] definitions;
+        private TToken currentToken;
+        private TToken lastToken;
+        private int pos;
+
+        #endregion
 
         protected readonly string input;
-        protected int pos;
 
-        public int Position => pos;
+        #region constructors
 
-        protected LexerBase(string input, TToken defaultToken)
+        protected LexerBase(string input, TToken defaultToken, params TokenDefinition[] definitions)
         {
             if (input == null || input == string.Empty)
             {
                 throw new ArgumentException(nameof(input));
             }
+
+            if(definitions == null || definitions.Length == 0)
+            {
+                throw new ArgumentException(nameof(definitions));
+            }
+
             this.input = input.Trim();
 
             pos = 0;
             currentToken = defaultToken;
-            endLines.Add('\r', '\n');
+            this.definitions = definitions;
         }
 
-        public abstract TToken NextToken();
-        public abstract TToken LastToken();
-        public abstract TToken CurrentToken();
+        #endregion
 
         protected TToken AssignTokenOfType(Func<TToken> instantiate)
         {
@@ -46,40 +88,58 @@ namespace TQL.Core.Syntax
             return currentToken;
         }
 
-        protected bool IsEndLine(char currentChar)
+        protected bool IsOutOfRange => pos >= input.Length;
+
+        public int Position => pos;
+
+        #region Interface implementation
+
+        public virtual TToken LastToken() => lastToken;
+
+        public virtual TToken CurrentToken() => currentToken;
+
+        public virtual TToken NextToken()
         {
-            if (pos + 1 < input.Length && IsEndLineCharacter(currentChar, input[pos + 1]))
+            while(!IsOutOfRange)
             {
-                return true;
+                TokenDefinition matchedDefinition = null;
+                int matchLength = 0;
+
+                foreach (var rule in definitions)
+                {
+                    var match = rule.Regex.Match(input, pos);
+
+                    if (match.Success && match.Index - pos == 0)
+                    {
+                        matchedDefinition = rule;
+                        matchLength = match.Length;
+                        break;
+                    }
+                }
+
+                if(matchedDefinition == null)
+                {
+                    throw new UnknownTokenException(pos, input[pos], string.Format("Unrecognized token exception at {0} for {1}", pos, input.Substring(pos)));
+                }
+                else
+                {
+                    var value = input.Substring(pos, matchLength);
+
+                    var oldPos = pos;
+                    var token = GetToken(value, matchedDefinition, matchLength);
+                    pos += matchLength;
+
+                    return AssignTokenOfType(() => token);
+                }
             }
-            return false;
+
+            return AssignTokenOfType(() => GetEndOfFileToken());
         }
 
-        protected bool IsEndLineCharacter(char currentChar, char nextChar)
-        {
-            if (this.endLines.ContainsKey(currentChar))
-            {
-                return nextChar == this.endLines[currentChar];
-            }
-            return false;
-        }
+        #endregion
 
-        protected static bool IsLetter(char currentChar)
-        {
-            if (Regex.IsMatch(currentChar.ToString(), "[a-zA-Z@]+"))
-            {
-                return true;
-            }
-            return false;
-        }
-
-        protected static bool IsDigit(char letter)
-        {
-            if (letter >= '0' && letter <= '9')
-            {
-                return true;
-            }
-            return false;
-        }
+        protected abstract TToken GetToken(string token, TokenDefinition matchedDefinition, int matchLength);
+        protected abstract TToken GetEndOfFileToken();
     }
+
 }
