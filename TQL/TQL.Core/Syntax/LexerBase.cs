@@ -105,9 +105,11 @@ namespace TQL.Core.Syntax
                 TokenDefinition matchedDefinition = null;
                 int matchLength = 0;
 
+                Match match = null;
+
                 foreach (var rule in definitions)
                 {
-                    var match = rule.Regex.Match(input, pos);
+                    match = rule.Regex.Match(input, pos);
 
                     if (match.Success && match.Index - pos == 0)
                     {
@@ -123,10 +125,8 @@ namespace TQL.Core.Syntax
                 }
                 else
                 {
-                    var value = input.Substring(pos, matchLength);
-
                     var oldPos = pos;
-                    var token = GetToken(value, matchedDefinition, matchLength);
+                    var token = GetToken(matchedDefinition, match);
                     pos += matchLength;
 
                     return AssignTokenOfType(() => token);
@@ -138,7 +138,7 @@ namespace TQL.Core.Syntax
 
         #endregion
 
-        protected abstract TToken GetToken(string token, TokenDefinition matchedDefinition, int matchLength);
+        protected abstract TToken GetToken(TokenDefinition matchedDefinition, Match match);
         protected abstract TToken GetEndOfFileToken();
     }
 
