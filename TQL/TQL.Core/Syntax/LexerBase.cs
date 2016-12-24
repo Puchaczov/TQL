@@ -90,7 +90,11 @@ namespace TQL.Core.Syntax
 
         protected bool IsOutOfRange => pos >= input.Length;
 
-        public int Position => pos;
+        public int Position
+        {
+            get { return pos; }
+            protected set { pos = value; }
+        }
 
         #region Interface implementation
 

@@ -3,12 +3,12 @@ using TQL.Interfaces;
 
 namespace TQL.Common.Evaluators
 {
-    public class TimeZoneCronForwardFireTimeEvaluatorDecorator : IFireTimeEvaluator
+    public class TimeZoneChangerDecorator : IFireTimeEvaluator
     {
         private readonly TimeZoneInfo destinationZoneInfo;
         private readonly IFireTimeEvaluator evaluator;
 
-        public TimeZoneCronForwardFireTimeEvaluatorDecorator(TimeZoneInfo destinationZoneInfo, IFireTimeEvaluator evaluator)
+        public TimeZoneChangerDecorator(TimeZoneInfo destinationZoneInfo, IFireTimeEvaluator evaluator)
         {
             this.destinationZoneInfo = destinationZoneInfo;
             this.evaluator = evaluator;
