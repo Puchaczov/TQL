@@ -8,24 +8,19 @@ namespace TQL.Core.Syntax
         where TToken : GenericToken<TTokenType>
         where TTokenType : struct, IComparable, IFormattable
     {
-        protected TToken currentToken;
-        protected TToken lastToken;
-        protected ILexer<TToken> lexer;
-
-        public ParserBase(ILexer<TToken> lexer)
-        {
-            this.lexer = lexer;
-        }
+        public abstract TToken CurrentToken { get; protected set; }
+        public abstract TToken LastToken { get; protected set; }
+        protected abstract ILexer<TToken> Lexer { get; }
 
         public void Consume(TTokenType tokenType)
         {
-            if (currentToken.TokenType.Equals(tokenType))
+            if (CurrentToken.TokenType.Equals(tokenType))
             {
-                lastToken = currentToken;
-                currentToken = lexer.NextToken();
+                LastToken = CurrentToken;
+                CurrentToken = Lexer.NextToken();
                 return;
             }
-            throw new UnexpectedTokenException<TTokenType>(lexer.Position, currentToken);
+            throw new UnexpectedTokenException<TTokenType>(Lexer.Position, CurrentToken);
         }
     }
 }
