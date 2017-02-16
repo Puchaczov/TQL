@@ -5,21 +5,38 @@ namespace TQL.Core.Tokens
     public abstract class GenericToken<TTokenType>
         where TTokenType : struct, IComparable, IFormattable
     {
-        public TextSpan Span { get; }
-        public TTokenType TokenType { get; }
-
+        /// <summary>
+        /// Initialize instance.
+        /// </summary>
+        /// <param name="value">The value.</param>
+        /// <param name="type">The type.</param>
+        /// <param name="span">The span.</param>
         protected GenericToken(string value, TTokenType type, TextSpan span)
         {
-            this.Value = value;
-            this.TokenType = type;
-            this.Span = span;
+            Value = value;
+            TokenType = type;
+            Span = span;
         }
 
-        public string Value
-        {
-            get;
-        }
+        /// <summary>
+        /// Gets the span.
+        /// </summary>
+        public TextSpan Span { get; }
 
+        /// <summary>
+        /// Gets the token type.
+        /// </summary>
+        public TTokenType TokenType { get; }
+
+        /// <summary>
+        /// Gets the token string representation.
+        /// </summary>
+        public string Value { get; }
+
+        /// <summary>
+        /// Clones the token.
+        /// </summary>
+        /// <returns></returns>
         public abstract GenericToken<TTokenType> Clone();
     }
 }

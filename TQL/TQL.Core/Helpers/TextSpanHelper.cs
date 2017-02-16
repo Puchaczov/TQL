@@ -4,20 +4,29 @@ namespace TQL.Core.Helpers
 {
     public static class TextSpanHelper
     {
-        public static bool IsEqual(this TextSpan span1, TextSpan span2)
+        /// <summary>
+        /// Determine if two TextSpans are equals.
+        /// </summary>
+        /// <param name="first">The first.</param>
+        /// <param name="second">The second.</param>
+        /// <returns>True if spans are equal, otherwise false.</returns>
+        public static bool IsEqual(this TextSpan first, TextSpan second)
         {
-            if (span1.Start == span2.Start && span1.End == span2.End)
-            {
+            if (first.Start == second.Start && first.End == second.End)
                 return true;
-            }
             return false;
         }
-        public static bool IsInside(this TextSpan span1, TextSpan span2)
+
+        /// <summary>
+        /// Determine if the second span is inside the first.
+        /// </summary>
+        /// <param name="first">The first.</param>
+        /// <param name="second">The seciond.</param>
+        /// <returns>True if the second span is inside the first, otherwise false.</returns>
+        public static bool IsInside(this TextSpan first, TextSpan second)
         {
-            if (span1.Start >= span2.Start && span1.End <= span2.End)
-            {
+            if (first.Start >= second.Start && first.End <= second.End)
                 return true;
-            }
             return false;
         }
     }

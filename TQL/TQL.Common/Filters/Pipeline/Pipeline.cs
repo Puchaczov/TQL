@@ -1,15 +1,25 @@
-﻿namespace TQL.Common.Pipeline
+﻿namespace TQL.Common.Filters.Pipeline
 {
     public class Pipeline<T> : IFilterChain<T>
     {
-        private IFilter<T> root;
+        private IFilter<T> _root;
 
-        public T Execute(T input) => root.Execute(input);
+        /// <summary>
+        /// Executes the filters on input.
+        /// </summary>
+        /// <param name="input">The input.</param>
+        /// <returns>Filtered input.</returns>
+        public T Execute(T input) => _root.Execute(input);
 
+        /// <summary>
+        /// Register the filter.
+        /// </summary>
+        /// <param name="filter">The filter.</param>
+        /// <returns>Filter chain.</returns>
         public IFilterChain<T> Register(IFilter<T> filter)
         {
-            if (root == null) root = filter;
-            else root.Register(filter);
+            if (_root == null) _root = filter;
+            else _root.Register(filter);
             return this;
         }
     }

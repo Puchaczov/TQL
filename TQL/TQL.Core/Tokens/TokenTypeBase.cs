@@ -1,4 +1,4 @@
-﻿namespace TQL.Tokens
+﻿namespace TQL.Core.Tokens
 {
     public enum TokenTypeBase : short
     {

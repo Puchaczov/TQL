@@ -2,23 +2,30 @@
 
 namespace TQL.Common.Converters
 {
-    public class ConvertionByFunc<Input, Output> : IConvertible<Input, Output>
+    public class ConvertionByFunc<TInput, TOutput> : IConvertible<TInput, TOutput>
     {
-        private readonly Func<Input, Output> converter;
+        private readonly Func<TInput, TOutput> _converter;
 
-        public ConvertionByFunc(Func<Input, Output> converter)
+        /// <summary>
+        /// Initialize object.
+        /// </summary>
+        /// <param name="converter">Function that converts TInput to TOutput</param>
+        public ConvertionByFunc(Func<TInput, TOutput> converter)
         {
-            this.converter = converter;
+            _converter = converter;
         }
 
-        public Output Convert(Input input)
+        /// <summary>
+        /// Converts TInput to TOutput.
+        /// </summary>
+        /// <param name="input">Type to convert.</param>
+        /// <returns>Converted object.</returns>
+        public TOutput Convert(TInput input)
         {
-            if(converter == null)
-            {
+            if (_converter == null)
                 throw new ArgumentNullException(nameof(input));
-            }
 
-            return converter(input);
+            return _converter(input);
         }
     }
 }

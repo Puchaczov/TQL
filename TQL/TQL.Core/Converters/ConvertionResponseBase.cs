@@ -1,11 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
-
-namespace TQL.Core.Converters
+﻿namespace TQL.Core.Converters
 {
-    public abstract class ConvertionResponseBase<TOutput> 
-    { }
+    public abstract class ConvertionResponseBase<TOutput>
+    {
+    }
 }

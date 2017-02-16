@@ -1,12 +1,28 @@
-﻿using System.Collections.Generic;
-
-namespace TQL.Core.Syntax
+﻿namespace TQL.Core.Syntax
 {
-    public interface ILexer<TToken>
+    public interface ILexer<out TToken>
     {
-        TToken NextToken();
-        TToken LastToken();
-        TToken CurrentToken();
+        /// <summary>
+        /// Gets the current position.
+        /// </summary>
         int Position { get; }
+
+        /// <summary>
+        /// Gets lastly taken token from stream.
+        /// </summary>
+        /// <returns>The TToken.</returns>
+        TToken Last();
+
+        /// <summary>
+        /// Gets the currently computed token.
+        /// </summary>
+        /// <returns>The TToken.</returns>
+        TToken Current();
+
+        /// <summary>
+        /// Compute the next token from stream.
+        /// </summary>
+        /// <returns>The TToken.</returns>
+        TToken Next();
     }
 }

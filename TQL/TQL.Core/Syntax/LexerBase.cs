@@ -1,23 +1,162 @@
 ﻿using System;
-using System.Collections;
-using System.Collections.Generic;
 using System.Text.RegularExpressions;
 using TQL.Core.Exceptions;
 
 namespace TQL.Core.Syntax
 {
     /// <summary>
-    /// Idea how to implement this piece of code where founded here:
-    /// https://blogs.msdn.microsoft.com/drew/2009/12/31/a-simple-lexer-in-c-that-uses-regular-expressions/
+    ///     Idea how to implement this piece of code where founded here:
+    ///     https://blogs.msdn.microsoft.com/drew/2009/12/31/a-simple-lexer-in-c-that-uses-regular-expressions/
     /// </summary>
-    public abstract class LexerBase<TToken>: ILexer<TToken>
+    public abstract class LexerBase<TToken> : ILexer<TToken>
     {
+        #region Private Variables
+
+        private readonly TokenDefinition[] _definitions;
+        private TToken _currentToken;
+        private TToken _lastToken;
+
+        #endregion
+
+        #region Constructors
+
+        /// <summary>
+        /// Initialize instance.
+        /// </summary>
+        /// <param name="input">The input.</param>
+        /// <param name="defaultToken">The Default token.</param>
+        /// <param name="definitions">The Definitions.</param>
+        protected LexerBase(string input, TToken defaultToken, params TokenDefinition[] definitions)
+        {
+            if (string.IsNullOrEmpty(input))
+                throw new ArgumentException(nameof(input));
+
+            if (definitions == null || definitions.Length == 0)
+                throw new ArgumentException(nameof(definitions));
+
+            Input = input.Trim();
+
+            Position = 0;
+            _currentToken = defaultToken;
+            _definitions = definitions;
+        }
+
+        #endregion
+
+        #region Public properties
+
+        /// <summary>
+        /// Determine if lexer position is out of range.
+        /// </summary>
+        protected bool IsOutOfRange => Position >= Input.Length;
+
+        #endregion
+
+        #region Protected properties
+
+        /// <summary>
+        /// Gets or sets the position.
+        /// </summary>
+        public int Position { get; protected set; }
+
+        /// <summary>
+        /// Gets the input.
+        /// </summary>
+        protected string Input { get; }
+
+        #endregion
+
+        #region Protected Methods
+
+        /// <summary>
+        /// Assigns token of specific type.
+        /// </summary>
+        /// <param name="instantiate">Instantiate token function.</param>
+        /// <returns>The TToken.</returns>
+        protected TToken AssignTokenOfType(Func<TToken> instantiate)
+        {
+            if (instantiate == null)
+                throw new ArgumentNullException(nameof(instantiate));
+
+            _lastToken = _currentToken;
+            _currentToken = instantiate();
+            return _currentToken;
+        }
+
+        /// <summary>
+        /// Gets the token.
+        /// </summary>
+        /// <param name="matchedDefinition">The matched definition.</param>
+        /// <param name="match">The match.</param>
+        /// <returns>The TToken.</returns>
+        protected abstract TToken GetToken(TokenDefinition matchedDefinition, Match match);
+
+        /// <summary>
+        /// Gets end of file token.
+        /// </summary>
+        /// <returns>The TToken.</returns>
+        protected abstract TToken GetEndOfFileToken();
+
+        #endregion
+
+        #region Public Methods
+
+        /// <summary>
+        /// Gets lastly processed token.
+        /// </summary>
+        /// <returns>The TToken.</returns>
+        public virtual TToken Last() => _lastToken;
+
+        /// <summary>
+        /// Gets currently processing token.
+        /// </summary>
+        /// <returns>The TToken.</returns>
+        public virtual TToken Current() => _currentToken;
+
+        /// <summary>
+        /// Compute next token.
+        /// </summary>
+        /// <returns>The TToken.</returns>
+        public virtual TToken Next()
+        {
+            while (!IsOutOfRange)
+            {
+                TokenDefinition matchedDefinition = null;
+                var matchLength = 0;
+
+                Match match = null;
+
+                foreach (var rule in _definitions)
+                {
+                    match = rule.Regex.Match(Input, Position);
+
+                    if (match.Success && match.Index - Position == 0)
+                    {
+                        matchedDefinition = rule;
+                        matchLength = match.Length;
+                        break;
+                    }
+                }
+
+                if (matchedDefinition == null)
+                    throw new UnknownTokenException(Position, Input[Position],
+                        $"Unrecognized token exception at {Position} for {Input.Substring(Position)}");
+                var oldPos = Position;
+                var token = GetToken(matchedDefinition, match);
+                Position += matchLength;
+
+                return AssignTokenOfType(() => token);
+            }
+
+            return AssignTokenOfType(GetEndOfFileToken);
+        }
+
+        #endregion
+
         #region TokenUtils
 
         protected sealed class TokenDefinition
         {
-            public Regex Regex { get; }
-
             public TokenDefinition(string pattern)
             {
                 Regex = new Regex(pattern);
@@ -27,123 +166,22 @@ namespace TQL.Core.Syntax
             {
                 Regex = new Regex(pattern, options);
             }
+
+            public Regex Regex { get; }
         }
+
         protected sealed class TokenPosition
         {
-            public int Index { get; }
-            public int Length { get; }
-
             public TokenPosition(int index, int length)
             {
-                this.Index = index;
-                this.Length = length;
+                Index = index;
+                Length = length;
             }
+
+            public int Index { get; }
+            public int Length { get; }
         }
 
         #endregion
-
-        #region Private variables
-
-        private TokenDefinition[] definitions;
-        private TToken currentToken;
-        private TToken lastToken;
-        private int pos;
-
-        #endregion
-
-        protected readonly string input;
-
-        #region constructors
-
-        protected LexerBase(string input, TToken defaultToken, params TokenDefinition[] definitions)
-        {
-            if (input == null || input == string.Empty)
-            {
-                throw new ArgumentException(nameof(input));
-            }
-
-            if(definitions == null || definitions.Length == 0)
-            {
-                throw new ArgumentException(nameof(definitions));
-            }
-
-            this.input = input.Trim();
-
-            pos = 0;
-            currentToken = defaultToken;
-            this.definitions = definitions;
-        }
-
-        #endregion
-
-        protected TToken AssignTokenOfType(Func<TToken> instantiate)
-        {
-            if (instantiate == null)
-            {
-                throw new ArgumentNullException(nameof(instantiate));
-            }
-
-            lastToken = currentToken;
-            currentToken = instantiate();
-            return currentToken;
-        }
-
-        protected bool IsOutOfRange => pos >= input.Length;
-
-        public int Position
-        {
-            get { return pos; }
-            protected set { pos = value; }
-        }
-
-        #region Interface implementation
-
-        public virtual TToken LastToken() => lastToken;
-
-        public virtual TToken CurrentToken() => currentToken;
-
-        public virtual TToken NextToken()
-        {
-            while(!IsOutOfRange)
-            {
-                TokenDefinition matchedDefinition = null;
-                int matchLength = 0;
-
-                Match match = null;
-
-                foreach (var rule in definitions)
-                {
-                    match = rule.Regex.Match(input, pos);
-
-                    if (match.Success && match.Index - pos == 0)
-                    {
-                        matchedDefinition = rule;
-                        matchLength = match.Length;
-                        break;
-                    }
-                }
-
-                if(matchedDefinition == null)
-                {
-                    throw new UnknownTokenException(pos, input[pos], string.Format("Unrecognized token exception at {0} for {1}", pos, input.Substring(pos)));
-                }
-                else
-                {
-                    var oldPos = pos;
-                    var token = GetToken(matchedDefinition, match);
-                    pos += matchLength;
-
-                    return AssignTokenOfType(() => token);
-                }
-            }
-
-            return AssignTokenOfType(() => GetEndOfFileToken());
-        }
-
-        #endregion
-
-        protected abstract TToken GetToken(TokenDefinition matchedDefinition, Match match);
-        protected abstract TToken GetEndOfFileToken();
     }
-
 }

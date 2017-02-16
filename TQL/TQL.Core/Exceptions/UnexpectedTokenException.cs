@@ -1,5 +1,5 @@
-﻿using TQL.Core.Tokens;
-using System;
+﻿using System;
+using TQL.Core.Tokens;
 
 namespace TQL.Core.Exceptions
 {
@@ -8,8 +8,8 @@ namespace TQL.Core.Exceptions
     {
         public UnexpectedTokenException(int pos, GenericToken<TTokenType> token)
         {
-            this.Position = pos;
-            this.Token = token;
+            Position = pos;
+            Token = token;
         }
 
         public override string Message => $"Unexpected token {Token.Value} occured at position {Position}";
