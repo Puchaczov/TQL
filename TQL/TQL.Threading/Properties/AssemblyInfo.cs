@@ -5,7 +5,7 @@ using System.Runtime.InteropServices;
 // set of attributes. Change these attribute values to modify the information
 // associated with an assembly.
 [assembly: AssemblyTitle("TQL.Threading")]
-[assembly: AssemblyDescription("Usefull class when using thread features.")]
+[assembly: AssemblyDescription("Usefull classes when using thread features.")]
 [assembly: AssemblyConfiguration("")]
 [assembly: AssemblyCompany("Jakub Puchała")]
 [assembly: AssemblyProduct("TQL.Threading")]
