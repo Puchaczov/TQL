@@ -1,5 +1,4 @@
 ﻿using System;
-using TQL.Core.Exceptions;
 using TQL.Core.Tokens;
 
 namespace TQL.Core.Syntax
