@@ -6,7 +6,7 @@
     <Version>0.2.0.0</Version>
     <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
     <Copyright>Jakub Puchała @ 2016</Copyright>
-    <Description>Basic primitives shared between TQL libraries.</Description>
+    <Description>Basic timer that calls back delegate depending on passed evaluators.</Description>
     <PackageLicenseUrl>https://raw.githubusercontent.com/Puchaczov/TQL/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/Puchaczov/TQL</PackageProjectUrl>
     <RepositoryUrl>https://github.com/Puchaczov/TQL</RepositoryUrl>
