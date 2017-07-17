@@ -6,7 +6,7 @@ using TQL.Interfaces;
 
 namespace TQL.Threading
 {
-    public abstract class TimerBase<TIdentifiableEvaluator>:  MarshalByRefObject, IDisposable
+    public abstract class TimerBase<TIdentifiableEvaluator>: IDisposable
         where TIdentifiableEvaluator: IFireTimeEvaluator, IKey
     {
         #region Private variables
