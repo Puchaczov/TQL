@@ -40,6 +40,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IdentifiableEvaluator.cs" />
     <Compile Include="IKey.cs" />
     <Compile Include="DequeueCustomEnumerator.cs" />
     <Compile Include="TimerBase.cs" />
