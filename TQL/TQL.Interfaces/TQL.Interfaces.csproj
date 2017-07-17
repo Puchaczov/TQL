@@ -8,6 +8,14 @@
     <Copyright>Jakub Puchała @ 2016</Copyright>
     <AssemblyVersion>2.0.1.0</AssemblyVersion>
     <FileVersion>2.0.1.0</FileVersion>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Description>Basic primitives shared between TQL libraries.</Description>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/Puchaczov/TQL/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/Puchaczov/TQL</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/Puchaczov/TQL</RepositoryUrl>
+    <PackageTags>TQL TQL.Interfaces</PackageTags>
+    <IncludeSource>True</IncludeSource>
+    <IncludeSymbols>True</IncludeSymbols>
   </PropertyGroup>
 
 </Project>

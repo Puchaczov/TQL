@@ -6,6 +6,14 @@
     <Version>5.0.1.0</Version>
     <Authors>Jakub Puchała</Authors>
     <Copyright>Jakub Puchała @ 2016</Copyright>
+    <GeneratePackageOnBuild>True</GeneratePackageOnBuild>
+    <Description>Basic primitives shared between TQL libraries.</Description>
+    <PackageLicenseUrl>https://raw.githubusercontent.com/Puchaczov/TQL/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/Puchaczov/TQL</PackageProjectUrl>
+    <PackageTags>TQL TQL.Core</PackageTags>
+    <RepositoryUrl>https://github.com/Puchaczov/TQL</RepositoryUrl>
+    <IncludeSource>True</IncludeSource>
+    <IncludeSymbols>True</IncludeSymbols>
   </PropertyGroup>
 
   <ItemGroup>
