@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -7,17 +8,17 @@ using TQL.Interfaces;
 
 namespace TQL.Threading
 {
-    public class Timer : TimerBase
+    public class Timer : TimerBase<IdentifiableEvaluator>
     {
         #region Private Variables
-        private readonly System.Threading.Timer _timer;
-        private KeyValuePair<DateTimeOffset, List<IFireTimeEvaluator>> _timerOccurence;
         private bool _canBeStarted = true;
+        private readonly TimerCallback _callback;
+        private readonly EventWaitHandle _waitHandle;
+        private readonly EventWaitHandle _onStoppedWaitHandle;
+        private bool _shouldPause;
+        private bool _paused;
 
         private readonly Func<DateTimeOffset> _nowFunc;
-        private readonly SortedList<DateTimeOffset, List<IFireTimeEvaluator>> _nextOccurences;
-
-        private readonly object _syncObj = new object();
         private bool _disposed;
         #endregion
 
@@ -29,20 +30,15 @@ namespace TQL.Threading
         /// <param name="evaluators">The evaluators.</param>
         /// <param name="token">The cancellation token.</param>
         /// <param name="timerCallback">The timer callback.</param>
-        public Timer(IReadOnlyCollection<IFireTimeEvaluator> evaluators, CancellationToken token, TimerCallback timerCallback)
+        public Timer(IReadOnlyCollection<IdentifiableEvaluator> evaluators, CancellationToken token, TimerCallback timerCallback)
             : base(evaluators, token)
         {
-            _timer = new System.Threading.Timer((obj) =>
-            {
-                lock (_syncObj)
-                {
-                    _timerOccurence.Value.Clear();
-                }
-                timerCallback(obj);
-            });
+            _callback = timerCallback;
             _nowFunc = () => DateTimeOffset.Now;
-            _nextOccurences = new SortedList<DateTimeOffset, List<IFireTimeEvaluator>>();
-            _timerOccurence = new KeyValuePair<DateTimeOffset, List<IFireTimeEvaluator>>(DateTimeOffset.MinValue, new List<IFireTimeEvaluator>());
+            _waitHandle = new EventWaitHandle(false, EventResetMode.AutoReset);
+            _shouldPause = false;
+            _paused = true;
+            _onStoppedWaitHandle = new EventWaitHandle(true, EventResetMode.ManualReset);
         }
 
         /// <summary>
@@ -52,25 +48,35 @@ namespace TQL.Threading
         /// <param name="token">The cancellation token.</param>
         /// <param name="currentTimeProvider">The current time provider.</param>
         /// <param name="timerCallback">The timer callback.</param>
-        public Timer(IReadOnlyCollection<IFireTimeEvaluator> evaluators, CancellationToken token, Func<DateTimeOffset> currentTimeProvider, TimerCallback timerCallback)
+        public Timer(IReadOnlyCollection<IdentifiableEvaluator> evaluators, CancellationToken token, Func<DateTimeOffset> currentTimeProvider, TimerCallback timerCallback)
             : base(evaluators, token)
         {
-            _timer = new System.Threading.Timer((obj) =>
-            {
-                lock (_syncObj)
-                {
-                    _timerOccurence.Value.Clear();
-                }
-                timerCallback(obj);
-            });
+            _callback = timerCallback;
             _nowFunc = currentTimeProvider;
-            _nextOccurences = new SortedList<DateTimeOffset, List<IFireTimeEvaluator>>();
-            _timerOccurence = new KeyValuePair<DateTimeOffset, List<IFireTimeEvaluator>>(DateTimeOffset.MinValue, new List<IFireTimeEvaluator>());
+            _waitHandle = new EventWaitHandle(true, EventResetMode.ManualReset);
+            _shouldPause = false;
+            _paused = true;
+            _onStoppedWaitHandle = new EventWaitHandle(true, EventResetMode.ManualReset);
         }
 
         #endregion
 
         #region Public Methods
+
+        /// <summary>
+        /// Determine if Timer can be started.
+        /// </summary>
+        public override bool CanStart => _canBeStarted;
+
+        /// <summary>
+        /// Blocks the thread until timer in paused mode
+        /// </summary>
+        public WaitHandle PausedWaitHandle => _onStoppedWaitHandle;
+
+        /// <summary>
+        /// Determine if timer is already paused.
+        /// </summary>
+        public bool IsPaused => _paused;
 
         /// <summary>
         /// Starts the timer.
@@ -80,7 +86,27 @@ namespace TQL.Threading
             if (!_canBeStarted) throw new NotSupportedException();
 
             _canBeStarted = false;
+            _paused = false;
+            _onStoppedWaitHandle.Reset();
             Task.Factory.StartNew(CalculateNextOccurences);
+        }
+        
+        /// <summary>
+        /// Resumes the timer.
+        /// </summary>
+        public override void ResumeTick()
+        {
+            _waitHandle.Set();
+            _shouldPause = false;
+        }
+
+        /// <summary>
+        /// Pauses the timer.
+        /// </summary>
+        public override void PauseTick()
+        {
+            _waitHandle.Reset();
+            _shouldPause = true;
         }
 
         /// <summary>
@@ -107,7 +133,6 @@ namespace TQL.Threading
 
             if (disposing)
             {
-                _timer.Dispose();
             }
 
             _disposed = true;
@@ -116,95 +141,115 @@ namespace TQL.Threading
         #endregion
 
         #region Private Methods
-
+        
         /// <summary>
         /// Calculates next occurences.
         /// </summary>
         private async void CalculateNextOccurences()
         {
+            var queue = new ConcurrentQueue<IdentifiableEvaluator>();
+            var sortedOccurencesSync = new object();
+            var sortedOccurences = new SortedList<DateTimeOffset, List<IdentifiableEvaluator>>();
+
+            do
+            {
+                if (!HasCurrent())
+                    break;
+
+                queue.Enqueue(Current);
+            } while (Next());
+            Reset();
+
             try
             {
                 while (!ShouldStop)
                 {
-
-                    await Task.Delay(100);
-
-                    Token.ThrowIfCancellationRequested();
-
-                    if (!HasCurrent())
+                    if (_shouldPause)
                     {
-                        break;
-                    }
+                        _paused = true;
+                        _onStoppedWaitHandle.Set();
+                        _waitHandle.WaitOne(TimeSpan.FromSeconds(1));
 
-                    do
-                    {
-                        Token.ThrowIfCancellationRequested();
-
-                        if (_nextOccurences.Any(f => f.Value.Contains(Current)))
-                            continue;
-
-                        lock (_syncObj)
+                        foreach (var occurence in sortedOccurences.ToList())
                         {
-                            if (_timerOccurence.Value != null && _timerOccurence.Value.Contains(Current))
+                            var diff = GetNow() - occurence.Key;
+
+                            if (diff <= TimeSpan.FromSeconds(1))
                                 continue;
+
+                            foreach (var evaluator in occurence.Value)
+                            {
+                                queue.Enqueue(evaluator);
+                            }
+                            sortedOccurences.Remove(occurence.Key);
                         }
 
-                        var evaluator = Current;
-                        var occurence = evaluator.NextFire();
+                        do
+                        {
+                            if(!HasCurrent())
+                                break;
 
+                            var shouldEvaluatorBeQueued = sortedOccurences.Any(occurence => !occurence.Value.Contains(Current));
+
+                            var isEvaluatorQueued = queue.Contains(Current);
+
+                            if(!shouldEvaluatorBeQueued && !isEvaluatorQueued)
+                                queue.Enqueue(Current);
+
+                        } while (Next());
+                        Reset();
+
+                        continue;
+                    }
+                    _paused = false;
+                    _onStoppedWaitHandle.Reset();
+
+                    Parallel.ForEach(new DequeueCustomEnumerator(queue), (evaluator) =>
+                    {
+                        var occurence = evaluator.NextFire();
                         while (occurence.HasValue && occurence.Value < GetNow())
                             occurence = evaluator.NextFire();
 
-                        if (occurence.HasValue)
+                        if (!occurence.HasValue)
+                            return;
+
+                        var adjustedDatetime = AdjustDateTime(occurence.Value);
+                        lock (sortedOccurencesSync)
                         {
-                            var adjustedDatetime = AdjustDateTime(occurence.Value);
-                            if (!_nextOccurences.ContainsKey(adjustedDatetime))
-                                _nextOccurences.Add(adjustedDatetime, new List<IFireTimeEvaluator>() { Current });
+                            if (!sortedOccurences.ContainsKey(adjustedDatetime))
+                                sortedOccurences.Add(adjustedDatetime, new List<IdentifiableEvaluator>() { evaluator });
                             else
-                                _nextOccurences[adjustedDatetime].Add(Current);
+                                sortedOccurences[adjustedDatetime].Add(evaluator);
                         }
-                        else
-                            Remove();
+                    });
 
-                    } while (Next());
-
-                    if (_nextOccurences.Count == 0)
+                    if(sortedOccurences.Count == 0)
                         continue;
 
-                    lock (_syncObj)
+                    var nearestOccurence = sortedOccurences.ElementAt(0);
+                    var span = nearestOccurence.Key - GetNow();
+
+                    if (span > TimeSpan.FromMilliseconds(-500))
                     {
-                        var closestCalculatedOccurence = _nextOccurences.First();
-                        if (closestCalculatedOccurence.Key < _timerOccurence.Key)
-                        {
-                            if (!_nextOccurences.ContainsKey(_timerOccurence.Key))
-                                _nextOccurences.Add(_timerOccurence.Key, _timerOccurence.Value);
-                            else
-                                _nextOccurences[_timerOccurence.Key].AddRange(_timerOccurence.Value);
+                        var waitPeriod = span < TimeSpan.Zero ? TimeSpan.Zero : span;
 
-                            _timerOccurence = closestCalculatedOccurence;
-                            _nextOccurences.Remove(closestCalculatedOccurence.Key);
+                        if (waitPeriod > TimeSpan.FromMilliseconds(20))
+                            await Task.Delay(waitPeriod);
 
-                            var span = _timerOccurence.Key - GetNow();
-
-                            _timer.Change(span < TimeSpan.Zero ? TimeSpan.Zero : span, Timeout.InfiniteTimeSpan);
-                        }
-                        else if (_timerOccurence.Key == DateTimeOffset.MinValue || _timerOccurence.Key < closestCalculatedOccurence.Key)
-                        {
-                            _timerOccurence = closestCalculatedOccurence;
-                            _nextOccurences.Remove(closestCalculatedOccurence.Key);
-                            var span = _timerOccurence.Key - GetNow();
-
-                            _timer.Change(span < TimeSpan.Zero ? TimeSpan.Zero : span, Timeout.InfiniteTimeSpan);
-                        }
+                        if (!_shouldPause)
+                            await Task.Factory.StartNew(() => _callback(nearestOccurence.Key, nearestOccurence.Value));
                     }
+
+                    sortedOccurences.RemoveAt(0);
+
+                    foreach (var item in nearestOccurence.Value)
+                        queue.Enqueue(item);
                 }
             }
-            catch (OperationCanceledException oce)
+            catch (Exception e)
             {
-            }
-            finally
-            {
-                _timer.Dispose();
+                Console.WriteLine(e);
+                throw;
             }
         }
 
@@ -225,5 +270,22 @@ namespace TQL.Threading
         }
 
         #endregion
+    }
+
+    public class IdentifiableEvaluator : IFireTimeEvaluator, IKey
+    {
+        private readonly IFireTimeEvaluator _evaluator;
+
+        public IdentifiableEvaluator(IFireTimeEvaluator evaluator, Guid key)
+        {
+            _evaluator = evaluator;
+            Key = key;
+        }
+
+        public Guid Key { get; }
+
+        public bool IsSatisfiedBy(DateTimeOffset dateTime) => _evaluator.IsSatisfiedBy(dateTime);
+
+        public DateTimeOffset? NextFire() => _evaluator.NextFire();
     }
 }

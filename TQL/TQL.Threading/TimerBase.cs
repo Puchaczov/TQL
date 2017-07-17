@@ -6,10 +6,11 @@ using TQL.Interfaces;
 
 namespace TQL.Threading
 {
-    public abstract class TimerBase: MarshalByRefObject, IDisposable
+    public abstract class TimerBase<TIdentifiableEvaluator>:  MarshalByRefObject, IDisposable
+        where TIdentifiableEvaluator: IFireTimeEvaluator, IKey
     {
         #region Private variables
-        private readonly IList<IFireTimeEvaluator> _evaluators;
+        private readonly IReadOnlyCollection<TIdentifiableEvaluator> _evaluators;
         private int _evaluatorIndex;
 
         protected bool ShouldStop { get; private set; }
@@ -22,9 +23,9 @@ namespace TQL.Threading
         /// </summary>
         /// <param name="evaluators">The evaluators.</param>
         /// <param name="token">The cancellation token.</param>
-        protected TimerBase(IReadOnlyCollection<IFireTimeEvaluator> evaluators, CancellationToken token)
+        protected TimerBase(IReadOnlyCollection<TIdentifiableEvaluator> evaluators, CancellationToken token)
         {
-            _evaluators = evaluators.ToList();
+            _evaluators = evaluators;
             _evaluatorIndex = 0;
             Token = token;
         }
@@ -42,9 +43,24 @@ namespace TQL.Threading
         #region Public Methods
 
         /// <summary>
+        /// Determine if Timer can be started.
+        /// </summary>
+        public abstract bool CanStart { get; }
+
+        /// <summary>
         /// Starts the timer.
         /// </summary>
         public abstract void StartTick();
+
+        /// <summary>
+        /// Pauses the timer.
+        /// </summary>
+        public abstract void PauseTick();
+
+        /// <summary>
+        /// Resumes the timer.
+        /// </summary>
+        public abstract void ResumeTick();
 
         /// <summary>
         /// Dispose the timer.
@@ -58,7 +74,7 @@ namespace TQL.Threading
         /// <summary>
         /// Gets the current evaluator.
         /// </summary>
-        protected IFireTimeEvaluator Current => _evaluators[_evaluatorIndex];
+        protected TIdentifiableEvaluator Current => _evaluators.ElementAt(_evaluatorIndex);
 
         /// <summary>
         /// Determine if has usable evaluator.
@@ -67,16 +83,6 @@ namespace TQL.Threading
         protected bool HasCurrent()
         {
             return _evaluators.Count > 0 && _evaluatorIndex > -1 && _evaluatorIndex < _evaluators.Count;
-        }
-
-        /// <summary>
-        /// Removes from evaluators.
-        /// </summary>
-        protected void Remove()
-        {
-            _evaluators.RemoveAt(_evaluatorIndex);
-            if (!HasNext())
-                _evaluatorIndex = 0;
         }
 
         /// <summary>
@@ -91,6 +97,14 @@ namespace TQL.Threading
                 return true;
             }
             return false;
+        }
+
+        /// <summary>
+        /// Resets the current evaluator to the first.
+        /// </summary>
+        protected void Reset()
+        {
+            _evaluatorIndex = 0;
         }
 
         /// <summary>

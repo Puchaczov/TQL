@@ -40,9 +40,12 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="IKey.cs" />
+    <Compile Include="DequeueCustomEnumerator.cs" />
     <Compile Include="TimerBase.cs" />
     <Compile Include="Timer.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TimerCallback.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
