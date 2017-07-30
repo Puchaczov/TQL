@@ -18,6 +18,7 @@ namespace TQL.Threading
         private bool _paused;
 
         private readonly Func<DateTimeOffset> _nowFunc;
+        private Task _calculateTask;
         private bool _disposed;
         #endregion
 
@@ -87,7 +88,7 @@ namespace TQL.Threading
             _canBeStarted = false;
             _paused = false;
             _onStoppedWaitHandle.Reset();
-            Task.Factory.StartNew(CalculateNextOccurences);
+            _calculateTask = Task.Factory.StartNew(CalculateNextOccurences, TaskCreationOptions.LongRunning);
         }
         
         /// <summary>
