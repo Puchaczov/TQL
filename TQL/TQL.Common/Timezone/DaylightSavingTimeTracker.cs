@@ -29,11 +29,11 @@ namespace TQL.Common.Timezone
         {
             var calcFire = _evaluator.NextFire();
 
-            if (!_timeZone.SupportsDaylightSavingTime)
-                return calcFire;
-
             if (!calcFire.HasValue)
                 return null;
+
+            if (!_timeZone.SupportsDaylightSavingTime)
+                return calcFire;
 
             var value = calcFire.Value;
 
@@ -42,14 +42,23 @@ namespace TQL.Common.Timezone
 
             var newOffset = _timeZone.GetUtcOffset(calcFire.Value);
 
-            if (newOffset == _lastlyEvaluated.Offset)
-                return new DateTimeOffset(value.DateTime.Add(_lastDiff), newOffset);
+            if (_timeZone.IsAmbiguousTime(calcFire.Value))
+            {
+                var diff = newOffset - _lastlyEvaluated.Offset;
+                var newDate = new DateTimeOffset(value.DateTime.Add(diff), _lastlyEvaluated.Offset + diff);
+                _lastDiff = diff;
+                _lastlyEvaluated = newDate;
+                return newDate;
+            }
 
-            var diff = newOffset - _lastlyEvaluated.Offset;
-            var newDate = new DateTimeOffset(value.DateTime.Add(diff), _lastlyEvaluated.Offset + diff);
-            _lastDiff = diff;
-            _lastlyEvaluated = newDate;
-            return newDate;
+            if (newOffset == _lastlyEvaluated.Offset)
+            {
+                _lastlyEvaluated = new DateTimeOffset(value.DateTime.Add(_lastDiff), newOffset);
+                return _lastlyEvaluated;
+            }
+
+            _lastlyEvaluated = new DateTimeOffset(value.DateTime, newOffset);
+            return _lastlyEvaluated;
         }
 
         /// <summary>
