@@ -42,7 +42,7 @@ namespace TQL.Common.Timezone
 
             var newOffset = _timeZone.GetUtcOffset(calcFire.Value);
 
-            if (_timeZone.IsAmbiguousTime(calcFire.Value))
+            if (_timeZone.IsAmbiguousTime(calcFire.Value) || _timeZone.IsInvalidTime(calcFire.Value.DateTime))
             {
                 var diff = newOffset - _lastlyEvaluated.Offset;
                 var newDate = new DateTimeOffset(value.DateTime.Add(diff), _lastlyEvaluated.Offset + diff);

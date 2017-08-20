@@ -140,6 +140,20 @@ namespace TQL.Common.Tests
             Assert.AreEqual(DateTimeOffset.Parse("26.03.2017 03:00:00 +02:00"), evaluator.NextFire());
         }
 
+        [TestMethod]
+        public void DaylightSavingTime_HoursResolution3_WithShiftingForwardTime_ShouldPass()
+        {
+            var evaluator = CreateEvaluator(new DateTimeOffset?[] {
+                new DateTimeOffset(2017, 3, 26, 0, 0, 0, TimeSpan.Zero),
+                new DateTimeOffset(2017, 3, 26, 1, 0, 0, TimeSpan.Zero),
+                new DateTimeOffset(2017, 3, 26, 2, 0, 0, TimeSpan.Zero),
+            });
+
+            Assert.AreEqual(DateTimeOffset.Parse("26.03.2017 00:00:00 +01:00"), evaluator.NextFire());
+            Assert.AreEqual(DateTimeOffset.Parse("26.03.2017 01:00:00 +01:00"), evaluator.NextFire());
+            Assert.AreEqual(DateTimeOffset.Parse("26.03.2017 03:00:00 +02:00"), evaluator.NextFire());
+        }
+
         private IFireTimeEvaluator CreateEvaluator(DateTimeOffset?[] scores)
         {
             var timeZone = TimeZoneInfo.FindSystemTimeZoneById("Central European Standard Time");
