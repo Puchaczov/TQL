@@ -92,7 +92,7 @@ namespace TQL.Common.Tests
             var evaluator = CreateEvaluator(new DateTimeOffset?[] {
                 new DateTimeOffset(2017, 10, 29, 1, 55, 0, TimeSpan.Zero),
                 new DateTimeOffset(2017, 10, 29, 3, 0, 0, TimeSpan.Zero),
-                new DateTimeOffset(2017, 10, 29, 3, 5, 0, TimeSpan.Zero),
+                new DateTimeOffset(2017, 10, 29, 4, 5, 0, TimeSpan.Zero),
             });
 
             Assert.AreEqual(DateTimeOffset.Parse("29.10.2017 01:55:00 +02:00"), evaluator.NextFire());
@@ -152,6 +152,20 @@ namespace TQL.Common.Tests
             Assert.AreEqual(DateTimeOffset.Parse("26.03.2017 00:00:00 +01:00"), evaluator.NextFire());
             Assert.AreEqual(DateTimeOffset.Parse("26.03.2017 01:00:00 +01:00"), evaluator.NextFire());
             Assert.AreEqual(DateTimeOffset.Parse("26.03.2017 03:00:00 +02:00"), evaluator.NextFire());
+        }
+
+        [TestMethod]
+        public void DaylightSavingTime_MinutesResolution2_WithShiftingForwardTime_ShouldPass()
+        {
+            var evaluator = CreateEvaluator(new DateTimeOffset?[] {
+                new DateTimeOffset(2017, 3, 26, 1, 58, 0, TimeSpan.Zero),
+                new DateTimeOffset(2017, 3, 26, 2, 1, 0, TimeSpan.Zero),
+                new DateTimeOffset(2017, 3, 26, 2, 4, 0, TimeSpan.Zero),
+            });
+
+            Assert.AreEqual(DateTimeOffset.Parse("26.03.2017 01:58:00 +01:00"), evaluator.NextFire());
+            Assert.AreEqual(DateTimeOffset.Parse("26.03.2017 03:01:00 +02:00"), evaluator.NextFire());
+            Assert.AreEqual(DateTimeOffset.Parse("26.03.2017 03:04:00 +02:00"), evaluator.NextFire());
         }
 
         private IFireTimeEvaluator CreateEvaluator(DateTimeOffset?[] scores)

@@ -42,7 +42,14 @@ namespace TQL.Common.Timezone
                 if (!fire.HasValue)
                     return null;
 
-                _fireSpan = _timeZone.GetUtcOffset(fire.Value.DateTime);
+                _fireSpan = _timeZone.GetUtcOffset(fire.Value);
+
+                var offset = _timeZone.GetUtcOffset(new DateTimeOffset(fire.Value.DateTime, _fireSpan));
+                if (_fireSpan != offset)
+                {
+                    _fireSpan = offset;
+                    return new DateTimeOffset(fire.Value.DateTime, offset);
+                }
 
                 return new DateTimeOffset(fire.Value.DateTime, _fireSpan);
             }
@@ -52,8 +59,8 @@ namespace TQL.Common.Timezone
                 return null;
 
             var dt = result.Value;
-
-            return new DateTimeOffset(dt.DateTime, _fireSpan);
+            var newDate = new DateTimeOffset(dt.DateTime, _fireSpan);
+            return newDate;
         }
     }
 }

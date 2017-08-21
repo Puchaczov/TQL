@@ -41,6 +41,12 @@ namespace TQL.Common.Timezone
                 _lastlyEvaluated = value;
 
             var newOffset = _timeZone.GetUtcOffset(calcFire.Value);
+            
+            if (newOffset == _lastlyEvaluated.Offset)
+            {
+                _lastlyEvaluated = new DateTimeOffset(value.DateTime.Add(_lastDiff), newOffset);
+                return _lastlyEvaluated;
+            }
 
             if (_timeZone.IsAmbiguousTime(calcFire.Value) || _timeZone.IsInvalidTime(calcFire.Value.DateTime))
             {
@@ -49,12 +55,6 @@ namespace TQL.Common.Timezone
                 _lastDiff = diff;
                 _lastlyEvaluated = newDate;
                 return newDate;
-            }
-
-            if (newOffset == _lastlyEvaluated.Offset)
-            {
-                _lastlyEvaluated = new DateTimeOffset(value.DateTime.Add(_lastDiff), newOffset);
-                return _lastlyEvaluated;
             }
 
             _lastlyEvaluated = new DateTimeOffset(value.DateTime, newOffset);
